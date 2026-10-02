@@ -1,4 +1,3 @@
-# Crop Disease Detector
 # 🌱 CropGuard — Crop Disease Detector
 
 CropGuard is an AI-powered web application that analyzes crop leaf
