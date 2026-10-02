@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Crop Disease Detector</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="brand">
+        <div class="brand-icon">🌱</div>
+
+        <div>
+            <h2>CropGuard</h2>
+            <span>AI Crop Health</span>
+        </div>
+    </div>
+
+    <div class="status">
+        <span class="status-dot"></span>
+        AI Model Online
+    </div>
+
+</header>
+
+
+<main>
+
+    <section class="hero">
+
+        <div class="hero-text">
+
+            <span class="badge">
+                ✨ AI-Powered Plant Analysis
+            </span>
+
+            <h1>
+                Detect crop diseases<br>
+                <span>in seconds.</span>
+            </h1>
+
+            <p>
+                Upload a leaf image and our AI model will analyze it
+                to identify potential diseases and provide useful
+                treatment guidance.
+            </p>
+
+        </div>
+
+
+        <div class="features">
+
+            <div>
+                <strong>13</strong>
+                <span>Disease Classes</span>
+            </div>
+
+            <div>
+                <strong>3</strong>
+                <span>Crop Types</span>
+            </div>
+
+            <div>
+                <strong>AI</strong>
+                <span>MobileNet Model</span>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="detector">
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <div>
+                    <h2>Analyze a Leaf</h2>
+                    <p>
+                        Select the crop and upload a clear leaf image.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <label class="field-label">
+                Select Crop
+            </label>
+
+            <div class="plant-options">
+
+                <button
+                    class="plant active"
+                    data-plant="Tomato"
+                    onclick="selectPlant(this)"
+                >
+                    🍅
+                    <span>Tomato</span>
+                </button>
+
+                <button
+                    class="plant"
+                    data-plant="Potato"
+                    onclick="selectPlant(this)"
+                >
+                    🥔
+                    <span>Potato</span>
+                </button>
+
+                <button
+                    class="plant"
+                    data-plant="Bell Pepper"
+                    onclick="selectPlant(this)"
+                >
+                    🫑
+                    <span>Bell Pepper</span>
+                </button>
+
+            </div>
+
+
+            <div
+                class="upload-area"
+                id="uploadArea"
+            >
+
+                <input
+                    type="file"
+                    id="image"
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                >
+
+                <div id="uploadContent">
+
+                    <div class="upload-icon">
+                        📷
+                    </div>
+
+                    <h3>
+                        Drop your leaf image here
+                    </h3>
+
+                    <p>
+                        or click to browse from your device
+                    </p>
+
+                    <span class="formats">
+                        JPG, PNG or WebP • Max 10 MB
+                    </span>
+
+                </div>
+
+
+                <div
+                    id="previewContainer"
+                    class="preview-container"
+                    style="display:none;"
+                >
+
+                    <img id="preview">
+
+                    <button
+                        class="remove"
+                        onclick="removeImage(event)"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="analyze-btn"
+                id="analyzeBtn"
+                onclick="predict()"
+            >
+
+                <span id="buttonText">
+                    🔍 Analyze Leaf
+                </span>
+
+                <span
+                    id="spinner"
+                    class="spinner"
+                    style="display:none;"
+                ></span>
+
+            </button>
+
+
+            <div
+                id="error"
+                class="error"
+                style="display:none;"
+            ></div>
+
+        </div>
+
+
+        <div
+            id="resultCard"
+            class="card result-card"
+            style="display:none;"
+        >
+
+            <div class="result-top">
+
+                <div class="result-icon">
+                    🌿
+                </div>
+
+                <div>
+
+                    <span class="result-label">
+                        AI Diagnosis
+                    </span>
+
+                    <h2 id="disease"></h2>
+
+                    <p id="plantName"></p>
+
+                </div>
+
+            </div>
+
+
+            <div class="confidence">
+
+                <div class="confidence-header">
+
+                    <span>
+                        Confidence
+                    </span>
+
+                    <strong id="confidenceText">
+                        0%
+                    </strong>
+
+                </div>
+
+                <div class="progress">
+
+                    <div
+                        id="confidenceBar"
+                        class="progress-bar"
+                    ></div>
+
+                </div>
+
+            </div>
+
+
+            <div class="advice">
+
+                <div class="advice-icon">
+                    💡
+                </div>
+
+                <div>
+
+                    <h3>
+                        Treatment & Prevention
+                    </h3>
+
+                    <p id="treatment"></p>
+
+                </div>
+
+            </div>
+
+
+            <div class="result-note">
+                ⚠️ This AI result is for informational purposes.
+                Confirm serious crop diseases with an agricultural
+                professional.
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<section class="history-section">
+
+    <div class="history-header">
+
+        <div>
+            <span class="section-label">YOUR ACTIVITY</span>
+            <h2>Prediction History</h2>
+            <p>Your recent crop disease analyses.</p>
+        </div>
+
+        <button
+            class="clear-history"
+            onclick="clearHistory()"
+        >
+            Clear History
+        </button>
+
+    </div>
+
+    <div id="historyList"></div>
+
+</section>
+
+
+<footer>
+
+    <span>CropGuard</span>
+    <span>•</span>
+    <span>AI-powered crop health analysis</span>
+
+</footer>
+
+
+<script>
+
+let selectedPlant = "Tomato";
+
+const imageInput = document.getElementById("image");
+const uploadArea = document.getElementById("uploadArea");
+const preview = document.getElementById("preview");
+const previewContainer =
+    document.getElementById("previewContainer");
+
+
+// ---------------- PLANT ----------------
+
+function selectPlant(button) {
+
+    document
+        .querySelectorAll(".plant")
+        .forEach(btn => btn.classList.remove("active"));
+
+    button.classList.add("active");
+
+    selectedPlant = button.dataset.plant;
+}
+
+
+// ---------------- UPLOAD ----------------
+
+uploadArea.addEventListener("click", () => {
+    imageInput.click();
+});
+
+
+imageInput.addEventListener("change", () => {
+
+    if (imageInput.files.length > 0) {
+        showPreview(imageInput.files[0]);
+    }
+
+});
+
+
+uploadArea.addEventListener("dragover", (event) => {
+
+    event.preventDefault();
+
+    uploadArea.classList.add("dragging");
+
+});
+
+
+uploadArea.addEventListener("dragleave", () => {
+
+    uploadArea.classList.remove("dragging");
+
+});
+
+
+uploadArea.addEventListener("drop", (event) => {
+
+    event.preventDefault();
+
+    uploadArea.classList.remove("dragging");
+
+    const file = event.dataTransfer.files[0];
+
+    if (file) {
+
+        imageInput.files = event.dataTransfer.files;
+
+        showPreview(file);
+
+    }
+
+});
+
+
+function showPreview(file) {
+
+    if (!file.type.startsWith("image/")) {
+        showError("Please select an image file.");
+        return;
+    }
+
+    preview.src = URL.createObjectURL(file);
+
+    document.getElementById("uploadContent")
+        .style.display = "none";
+
+    previewContainer.style.display = "block";
+
+    hideError();
+
+}
+
+
+function removeImage(event) {
+
+    event.stopPropagation();
+
+    imageInput.value = "";
+
+    previewContainer.style.display = "none";
+
+    document.getElementById("uploadContent")
+        .style.display = "block";
+
+    document.getElementById("resultCard")
+        .style.display = "none";
+}
+
+
+// ---------------- PREDICTION ----------------
+
+async function predict() {
+
+    const file = imageInput.files[0];
+
+    if (!file) {
+
+        showError(
+            "Please upload a leaf image first."
+        );
+
+        return;
+    }
+
+    hideError();
+
+    const button =
+        document.getElementById("analyzeBtn");
+
+    const buttonText =
+        document.getElementById("buttonText");
+
+    const spinner =
+        document.getElementById("spinner");
+
+
+    button.disabled = true;
+
+    buttonText.textContent =
+        "Analyzing image...";
+
+    spinner.style.display = "inline-block";
+
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append("plant", selectedPlant);
+
+
+    try {
+
+        const response = await fetch(
+            "/predict",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+
+        const data = await response.json();
+
+
+        if (data.error) {
+
+            showError(data.error);
+        
+            return;
+        }
+        
+        if (data.mismatch) {
+        
+            showError(
+                "🌿 " + data.message +
+                " (" + data.confidence + "% confidence)"
+            );
+        
+            document.getElementById("resultCard")
+                .style.display = "none";
+        
+            return;
+        }
+
+
+        document.getElementById("resultCard")
+            .style.display = "block";
+
+
+        document.getElementById("disease")
+            .textContent = data.disease;
+
+
+        document.getElementById("plantName")
+            .textContent = data.plant;
+
+
+        document.getElementById("confidenceText")
+            .textContent =
+            data.confidence + "%";
+
+
+        document.getElementById("treatment")
+            .textContent =
+            data.treatment;
+        saveHistory(data);
+
+        setTimeout(() => {
+
+            document.getElementById("confidenceBar")
+                .style.width =
+                data.confidence + "%";
+
+        }, 100);
+
+
+        document.getElementById("resultCard")
+            .scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+    }
+
+    catch (error) {
+
+        showError(
+            "Something went wrong. Please try again."
+        );
+
+    }
+
+    finally {
+
+        button.disabled = false;
+
+        buttonText.textContent =
+            "🔍 Analyze Leaf";
+
+        spinner.style.display = "none";
+
+    }
+
+}
+
+
+// ---------------- ERROR ----------------
+
+function showError(message) {
+
+    const error =
+        document.getElementById("error");
+
+    error.textContent = "⚠️ " + message;
+
+    error.style.display = "block";
+
+}
+
+
+function hideError() {
+
+    document.getElementById("error")
+        .style.display = "none";
+
+}
+
+
+// ---------------- HISTORY ----------------
+
+function saveHistory(data) {
+
+    let history =
+        JSON.parse(
+            localStorage.getItem("cropHistory") || "[]"
+        );
+
+    const record = {
+        plant: data.plant,
+        disease: data.disease,
+        confidence: data.confidence,
+        time: new Date().toLocaleString()
+    };
+
+    history.unshift(record);
+
+    // Keep latest 10 predictions
+    history = history.slice(0, 10);
+
+    localStorage.setItem(
+        "cropHistory",
+        JSON.stringify(history)
+    );
+
+    displayHistory();
+}
+
+
+function displayHistory() {
+
+    const history =
+        JSON.parse(
+            localStorage.getItem("cropHistory") || "[]"
+        );
+
+    const container =
+        document.getElementById("historyList");
+
+    if (history.length === 0) {
+
+        container.innerHTML = `
+            <div class="empty-history">
+                🌱
+                <p>No predictions yet.</p>
+                <span>Your completed analyses will appear here.</span>
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = history.map(item => `
+
+        <div class="history-item">
+
+            <div class="history-icon">
+                🌿
+            </div>
+
+            <div class="history-info">
+
+                <strong>${item.disease}</strong>
+
+                <span>
+                    ${item.plant} • ${item.time}
+                </span>
+
+            </div>
+
+            <div class="history-confidence">
+                ${item.confidence}%
+            </div>
+
+        </div>
+
+    `).join("");
+}
+
+
+function clearHistory() {
+
+    localStorage.removeItem("cropHistory");
+
+    displayHistory();
+}
+
+
+// Load history when page opens
+displayHistory();
+
+</script>
+
+</body>
+
+</html>
