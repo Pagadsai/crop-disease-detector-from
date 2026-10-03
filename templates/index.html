@@ -284,7 +284,48 @@
                         Treatment & Prevention
                     </h3>
 
-                    <p id="treatment"></p>
+                    <div id="treatment"></div>
+
+                    <div class="advice-actions" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+
+                        <button
+                            type="button"
+                            onclick="printAdvice()"
+                            style="
+                                border:1px solid #0f766e;
+                                background:white;
+                                color:#0f766e;
+                                padding:10px 16px;
+                                border-radius:10px;
+                                cursor:pointer;
+                                font-weight:600;
+                            "
+                        >
+                            🖨️ Print Advice
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="shareAdvice()"
+                            style="
+                                border:1px solid #0f766e;
+                                background:#0f766e;
+                                color:white;
+                                padding:10px 16px;
+                                border-radius:10px;
+                                cursor:pointer;
+                                font-weight:600;
+                            "
+                        >
+                            📤 Share Advice
+                        </button>
+
+                    </div>
+
+                    <p
+                        id="shareStatus"
+                        style="display:none; margin-top:10px; font-size:13px;"
+                    ></p>
 
                 </div>
 
@@ -307,23 +348,37 @@
 <section class="history-section">
 
     <div class="history-header">
-
         <div>
             <span class="section-label">YOUR ACTIVITY</span>
             <h2>Prediction History</h2>
             <p>Your recent crop disease analyses.</p>
         </div>
-
+    
         <button
             class="clear-history"
             onclick="clearHistory()"
         >
             Clear History
         </button>
-
     </div>
-
+    
+    <div class="history-filters">
+    
+        <input
+            type="text"
+            id="historySearch"
+            placeholder="🔍 Search disease..."
+        >
+    
+        <input
+            type="date"
+            id="historyDate"
+        >
+        
+    </div>
+    
     <div id="historyList"></div>
+
 
 </section>
 
@@ -541,10 +596,22 @@ async function predict() {
             data.confidence + "%";
 
 
-        document.getElementById("treatment")
-            .textContent =
-            data.treatment;
-        saveHistory(data);
+            renderTreatmentAdvice(data);
+
+            // Low confidence warning
+            if (data.low_confidence || data.confidence < 75) {
+            
+                showError(
+                    "Low confidence. Please take a clearer photo of the leaf and try again."
+                );
+            
+            } else {
+            
+                hideError();
+            
+            }
+            
+            await saveHistory(data, file);
 
         setTimeout(() => {
 
@@ -584,7 +651,367 @@ async function predict() {
 
 }
 
+// ---------------- TREATMENT ADVICE ----------------
 
+function renderTreatmentAdvice(data) {
+
+    const treatment = document.getElementById("treatment");
+
+    const disease = (data.disease || "").toLowerCase();
+
+    const plant = data.plant || "crop";
+
+    let steps = [];
+
+
+    // HEALTHY
+    if (disease === "healthy") {
+
+        steps = [
+
+            "<strong>1. No treatment needed</strong><br>" +
+            "Keep the plant healthy and continue normal care.",
+
+            "<strong>2. Monitor regularly</strong><br>" +
+            "Check the leaves regularly for new spots, discoloration or curling.",
+
+            "<strong>3. Prevent future problems</strong><br>" +
+            "Give the plant good airflow, appropriate watering and enough sunlight.",
+
+            "<strong>What to buy:</strong> " +
+            "No disease-specific treatment is needed."
+
+        ];
+
+    }
+
+
+    // MOSAIC VIRUS
+    else if (disease.includes("mosaic virus")) {
+
+        steps = [
+
+            "<strong>1. Isolate the affected plant</strong><br>" +
+            "Keep it away from healthy plants to reduce the chance of spread.",
+
+            "<strong>2. Remove badly affected plants</strong><br>" +
+            "Dispose of infected plant material safely rather than composting it.",
+
+            "<strong>3. Prevent spread</strong><br>" +
+            "Clean hands and tools after handling affected plants.",
+
+            "<strong>What to buy:</strong> " +
+            "There is no direct cure for mosaic virus. " +
+            "Use pest-control products only if a pest is confirmed as the carrier."
+
+        ];
+
+    }
+
+
+    // YELLOW LEAF CURL
+    else if (disease.includes("yellow leaf curl")) {
+
+        steps = [
+
+            "<strong>1. Remove badly affected plants</strong><br>" +
+            "Removing severely affected plants can help reduce spread.",
+
+            "<strong>2. Control whiteflies</strong><br>" +
+            "Inspect the underside of leaves and use a suitable whitefly-control product according to its label.",
+
+            "<strong>3. Keep the area clean</strong><br>" +
+            "Remove infected plant debris and control weeds around the crop.",
+
+            "<strong>What to buy:</strong> " +
+            "A whitefly-control product labeled for your crop and local use."
+
+        ];
+
+    }
+
+
+    // BACTERIAL SPOT
+    else if (disease.includes("bacterial spot")) {
+
+        steps = [
+
+            "<strong>1. Remove affected leaves</strong><br>" +
+            "Remove badly infected leaves and dispose of them away from healthy plants.",
+
+            "<strong>2. Keep leaves dry</strong><br>" +
+            "Avoid overhead watering and improve airflow around the plant.",
+
+            "<strong>3. Apply treatment early</strong><br>" +
+            "Use an appropriate treatment when symptoms first appear and follow the product label.",
+
+            "<strong>What to buy:</strong> " +
+            "A treatment specifically labeled for bacterial diseases on your crop."
+
+        ];
+
+    }
+
+
+    // OTHER DISEASES
+    else {
+
+        steps = [
+
+            "<strong>1. Remove affected leaves</strong><br>" +
+            "Remove badly affected leaves and dispose of them away from healthy plants.",
+
+            "<strong>2. Improve growing conditions</strong><br>" +
+            "Improve airflow, avoid overhead watering and keep the growing area clean.",
+
+            "<strong>3. Apply treatment early</strong><br>" +
+            "Start treatment when symptoms first appear and follow the product label for timing and repeat applications.",
+
+            "<strong>What to buy:</strong> " +
+            "A treatment specifically labeled for this disease and your crop."
+
+        ];
+
+    }
+
+
+    treatment.innerHTML = steps.map(step =>
+
+        `<div style="margin-bottom:12px; line-height:1.55;">
+            ${step}
+        </div>`
+
+    ).join("");
+
+
+    // Store current advice for Print / Share
+
+    window.currentAdvice = {
+
+        plant: plant,
+
+        disease: data.disease || "Unknown",
+
+        confidence: data.confidence,
+
+        treatmentHtml: treatment.innerHTML
+
+    };
+
+}
+
+
+// ---------------- PRINT ADVICE ----------------
+
+function printAdvice() {
+
+    if (!window.currentAdvice) {
+
+        return;
+
+    }
+
+
+    const advice = window.currentAdvice;
+
+
+    const printWindow =
+        window.open(
+            "",
+            "_blank",
+            "width=800,height=700"
+        );
+
+
+    if (!printWindow) {
+
+        showError(
+            "Please allow pop-ups to print the treatment advice."
+        );
+
+        return;
+
+    }
+
+
+    printWindow.document.write(`
+
+        <!DOCTYPE html>
+
+        <html>
+
+        <head>
+
+            <title>CropGuard Treatment Advice</title>
+
+            <style>
+
+                body {
+
+                    font-family: Arial, sans-serif;
+
+                    max-width: 800px;
+
+                    margin: 40px auto;
+
+                    padding: 20px;
+
+                    line-height: 1.6;
+
+                    color: #222;
+
+                }
+
+                h1 {
+
+                    margin-bottom: 5px;
+
+                }
+
+                .meta {
+
+                    color: #666;
+
+                    margin-bottom: 25px;
+
+                }
+
+            </style>
+
+        </head>
+
+        <body>
+
+            <h1>CropGuard - Treatment Advice</h1>
+
+            <div class="meta">
+
+                Crop: ${advice.plant}<br>
+
+                Diagnosis: ${advice.disease}<br>
+
+                Confidence: ${advice.confidence}%
+
+            </div>
+
+            ${advice.treatmentHtml}
+
+            <p style="margin-top:30px; font-size:13px;">
+
+                This AI result is for informational purposes.
+                Confirm serious crop diseases with an agricultural professional.
+
+            </p>
+
+        </body>
+
+        </html>
+
+    `);
+
+
+    printWindow.document.close();
+
+    printWindow.focus();
+
+
+    setTimeout(() => {
+
+        printWindow.print();
+
+    }, 300);
+
+}
+
+
+// ---------------- SHARE ADVICE ----------------
+
+async function shareAdvice() {
+
+    if (!window.currentAdvice) {
+
+        return;
+
+    }
+
+
+    const advice = window.currentAdvice;
+
+
+    const plainTreatment = advice.treatmentHtml
+
+        .replace(/<[^>]*>/g, " ")
+
+        .replace(/\s+/g, " ")
+
+        .trim();
+
+
+    const shareText =
+
+        `CropGuard\n\n` +
+
+        `Crop: ${advice.plant}\n` +
+
+        `Diagnosis: ${advice.disease}\n` +
+
+        `Confidence: ${advice.confidence}%\n\n` +
+
+        `Treatment & Prevention:\n${plainTreatment}`;
+
+
+    try {
+
+        if (navigator.share) {
+
+            await navigator.share({
+
+                title: "CropGuard Treatment Advice",
+
+                text: shareText
+
+            });
+
+        }
+
+        else {
+
+            await navigator.clipboard.writeText(shareText);
+
+
+            const status =
+                document.getElementById("shareStatus");
+
+
+            status.textContent =
+                "✓ Advice copied to clipboard.";
+
+            status.style.display = "block";
+
+
+            setTimeout(() => {
+
+                status.style.display = "none";
+
+            }, 3000);
+
+        }
+
+    }
+
+    catch (error) {
+
+        if (error.name !== "AbortError") {
+
+            showError(
+                "Unable to share the advice. Please try again."
+            );
+
+        }
+
+    }
+
+}
 // ---------------- ERROR ----------------
 
 function showError(message) {
@@ -609,68 +1036,200 @@ function hideError() {
 
 // ---------------- HISTORY ----------------
 
-function saveHistory(data) {
+// ---------------- HISTORY ----------------
+
+async function createThumbnail(file) {
+
+    return new Promise((resolve) => {
+
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+
+            const img = new Image();
+
+            img.onload = function() {
+
+                const canvas = document.createElement("canvas");
+
+                const maxSize = 120;
+
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+
+                    if (width > maxSize) {
+
+                        height =
+                            height * maxSize / width;
+
+                        width = maxSize;
+
+                    }
+
+                } else {
+
+                    if (height > maxSize) {
+
+                        width =
+                            width * maxSize / height;
+
+                        height = maxSize;
+
+                    }
+
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx =
+                    canvas.getContext("2d");
+
+                ctx.drawImage(
+                    img,
+                    0,
+                    0,
+                    width,
+                    height
+                );
+
+                resolve(
+                    canvas.toDataURL(
+                        "image/jpeg",
+                        0.7
+                    )
+                );
+
+            };
+
+            img.src = event.target.result;
+
+        };
+
+        reader.readAsDataURL(file);
+
+    });
+
+}
+
+
+async function saveHistory(data, file) {
 
     let history =
         JSON.parse(
             localStorage.getItem("cropHistory") || "[]"
         );
 
+
+    const thumbnail =
+        await createThumbnail(file);
+
+
+    const now = new Date();
+
+
     const record = {
+
+        id: Date.now(),
+
         plant: data.plant,
+
         disease: data.disease,
+
         confidence: data.confidence,
-        time: new Date().toLocaleString()
+
+        time: now.toLocaleString(),
+
+        date:
+            now.toISOString().split("T")[0],
+
+        image: thumbnail
+
     };
+
 
     history.unshift(record);
 
-    // Keep latest 10 predictions
+
+    // Keep only the latest 10 records
+    // to keep loading fast.
+
     history = history.slice(0, 10);
+
 
     localStorage.setItem(
         "cropHistory",
         JSON.stringify(history)
     );
 
+
     displayHistory();
+
 }
 
 
-function displayHistory() {
+function displayHistory(
+    filteredHistory = null
+) {
 
     const history =
+        filteredHistory ||
         JSON.parse(
             localStorage.getItem("cropHistory") || "[]"
         );
 
+
     const container =
         document.getElementById("historyList");
+
 
     if (history.length === 0) {
 
         container.innerHTML = `
+
             <div class="empty-history">
+
                 🌱
-                <p>No predictions yet.</p>
-                <span>Your completed analyses will appear here.</span>
+
+                <p>No matching predictions.</p>
+
+                <span>
+                    Try another search or date.
+                </span>
+
             </div>
+
         `;
 
         return;
+
     }
 
-    container.innerHTML = history.map(item => `
+
+    container.innerHTML = history.map(
+        (item, index) => `
 
         <div class="history-item">
 
-            <div class="history-icon">
+            <img
+                class="history-image"
+                src="${item.image || ""}"
+                alt="Leaf image"
+                onerror="this.style.display='none'"
+            >
+
+            <div class="history-icon"
+                 style="${item.image ? 'display:none' : ''}">
                 🌿
             </div>
 
             <div class="history-info">
 
-                <strong>${item.disease}</strong>
+                <strong>
+                    ${item.disease}
+                </strong>
 
                 <span>
                     ${item.plant} • ${item.time}
@@ -679,22 +1238,130 @@ function displayHistory() {
             </div>
 
             <div class="history-confidence">
+
                 ${item.confidence}%
+
             </div>
+
+            <button
+                type="button"
+                class="delete-history"
+                onclick="deleteHistory(${item.id}); return false;"
+                title="Delete this record"
+            >
+                🗑️
+            </button>
 
         </div>
 
-    `).join("");
+    `
+    ).join("");
+
+}
+
+
+function filterHistory() {
+
+    const search =
+        document
+            .getElementById("historySearch")
+            .value
+            .toLowerCase()
+            .trim();
+
+
+    const selectedDate =
+        document
+            .getElementById("historyDate")
+            .value;
+
+
+    const history =
+        JSON.parse(
+            localStorage.getItem("cropHistory") || "[]"
+        );
+
+
+    const filtered =
+        history.filter(item => {
+
+            const disease =
+                (item.disease || "")
+                    .toLowerCase();
+
+
+            const date =
+                item.date || "";
+
+
+            const matchesDisease =
+                !search ||
+                disease.includes(search);
+
+
+            const matchesDate =
+                !selectedDate ||
+                date === selectedDate;
+
+
+            return (
+                matchesDisease &&
+                matchesDate
+            );
+
+        });
+
+
+    displayHistory(filtered);
+
+}
+document
+    .getElementById("historySearch")
+    .addEventListener("input", filterHistory);
+
+document
+    .getElementById("historyDate")
+    .addEventListener("change", filterHistory);
+
+
+function deleteHistory(id) {
+    let history = JSON.parse(
+        localStorage.getItem("cropHistory") || "[]"
+    );
+
+    const updatedHistory = history.filter(
+        item => Number(item.id) !== Number(id)
+    );
+
+    localStorage.setItem(
+        "cropHistory",
+        JSON.stringify(updatedHistory)
+    );
+
+    filterHistory();
 }
 
 
 function clearHistory() {
 
-    localStorage.removeItem("cropHistory");
+    localStorage.removeItem(
+        "cropHistory"
+    );
+
+
+    document
+        .getElementById("historySearch")
+        .value = "";
+
+
+    document
+        .getElementById("historyDate")
+        .value = "";
+
 
     displayHistory();
-}
 
+}
 
 // Load history when page opens
 displayHistory();

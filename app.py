@@ -169,6 +169,7 @@ def predict(image, selected_plant):
         "plant": predicted_plant,
         "disease": display_name,
         "confidence": round(predicted_confidence, 2),
+        "low_confidence": predicted_confidence < 75,
         "treatment": TREATMENT.get(
             display_name,
             "Consult an agricultural expert for further diagnosis."
